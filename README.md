@@ -1,6 +1,4 @@
-Parfait ! Voici un exemple de **README** clair et structuré pour ton jeu RPG en Swift :
 
----
 
 # 🧙‍♂️ Jeu RPG Fantasy en Swift
 
@@ -59,10 +57,3 @@ Vous serez ensuite plongé dans un combat épique ⚔️ !
 - Intégrer un système de niveau et d'expérience
 - Ajouter des sons et une interface graphique avec SwiftUI
 
-## 📄 Licence
-
-Ce projet est libre et ouvert à tous ! Tu peux l'utiliser, le modifier et le partager à volonté ✨
-
----
-
-Si tu veux que je le traduise en anglais ou que je personnalise certaines sections (ex: ton nom en auteur, ou une petite intro roleplay), je peux te le faire aussi !
