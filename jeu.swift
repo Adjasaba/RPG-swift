@@ -51,6 +51,35 @@ class Personnage {
     func description() -> String {
         return "\(nom) (\(type)) - PV: \(pointsDeVie), ATT: \(attaque), DEF: \(defense), Potions: \(potions), Technique spéciale: \(utilisationsTechniqueSpeciale) utilisations restantes"
     }
+    
+    // Fonction pour réinitialiser les potions et techniques spéciales
+    func reinitialiser() {
+        potions = 2
+        utilisationsTechniqueSpeciale = 2
+    }
+}
+
+// Classe pour représenter une salle
+class Salle {
+    let id: Int
+    let nom: String
+    let description: String
+    let niveau: Int
+    var ennemi: Personnage?
+    var estBoss: Bool
+    var sallesConnectees: [Int]
+    var tresor: (description: String, effet: (Personnage) -> Void)?
+    
+    init(id: Int, nom: String, description: String, niveau: Int, ennemi: Personnage? = nil, estBoss: Bool = false, sallesConnectees: [Int] = [], tresor: (description: String, effet: (Personnage) -> Void)? = nil) {
+        self.id = id
+        self.nom = nom
+        self.description = description
+        self.niveau = niveau
+        self.ennemi = ennemi
+        self.estBoss = estBoss
+        self.sallesConnectees = sallesConnectees
+        self.tresor = tresor
+    }
 }
 
 // Fonctions pour créer les différentes classes de personnages avec leurs techniques spéciales
@@ -109,6 +138,119 @@ func creerElfe(nom: String) -> Personnage {
     )
     
     return personnage
+}
+
+// Fonction pour créer toutes les salles du jeu
+func creerSalles() -> [Salle] {
+    var salles: [Salle] = []
+    
+    // Niveau 1 - Entrée du donjon
+    salles.append(Salle(
+        id: 1,
+        nom: "Entrée du Donjon",
+        description: "Une grande porte en bois massif donne accès à un couloir sombre.",
+        niveau: 1,
+        sallesConnectees: [2, 3]
+    ))
+    
+    salles.append(Salle(
+        id: 2,
+        nom: "Salle des Gardes",
+        description: "Une petite salle où les gardes se reposaient. Un elfe sombre monte la garde.",
+        niveau: 1,
+        ennemi: creerElfe(nom: "Elfe Sombre"),
+        sallesConnectees: [1, 4],
+        tresor: (
+            description: "Potion avancée",
+            effet: { personnage in
+                personnage.potions += 1
+                print("Vous avez trouvé une potion avancée! (+1 potion)")
+            }
+        )
+    ))
+    
+    salles.append(Salle(
+        id: 3,
+        nom: "Couloir Abandonné",
+        description: "Un long couloir abandonné. Les murs sont couverts de mousse.",
+        niveau: 1,
+        sallesConnectees: [1, 5]
+    ))
+    
+    // Niveau 2 - Étage intermédiaire
+    salles.append(Salle(
+        id: 4,
+        nom: "Salle d'Entraînement",
+        description: "Une grande salle remplie d'équipements d'entraînement. Un chevalier noir s'y exerce.",
+        niveau: 2,
+        ennemi: creerOrdre(nom: "Chevalier Noir"),
+        sallesConnectees: [2, 6, 7],
+        tresor: (
+            description: "Amulette de Force",
+            effet: { personnage in
+                personnage.attaque += 5
+                print("Vous avez trouvé une Amulette de Force! (+5 en attaque)")
+            }
+        )
+    ))
+    
+    salles.append(Salle(
+        id: 5,
+        nom: "Bibliothèque Ancienne",
+        description: "Une vaste bibliothèque remplie de livres anciens.",
+        niveau: 2,
+        sallesConnectees: [3, 7],
+        tresor: (
+            description: "Parchemin de Savoir",
+            effet: { personnage in
+                personnage.defense += 3
+                print("Vous avez trouvé un Parchemin de Savoir! (+3 en défense)")
+            }
+        )
+    ))
+    
+    // Niveau 3 - Profondeurs du donjon
+    salles.append(Salle(
+        id: 6,
+        nom: "Crypte Oubliée",
+        description: "Une crypte froide et humide. Des bruits étranges résonnent dans les ténèbres.",
+        niveau: 3,
+        ennemi: creerFee(nom: "Esprit Vengeur"),
+        sallesConnectees: [4, 8],
+        tresor: (
+            description: "Essence Magique",
+            effet: { personnage in
+                personnage.utilisationsTechniqueSpeciale += 1
+                print("Vous avez trouvé une Essence Magique! (+1 utilisation de technique spéciale)")
+            }
+        )
+    ))
+    
+    salles.append(Salle(
+        id: 7,
+        nom: "Jardin Intérieur",
+        description: "Un jardin magique à l'intérieur du donjon. La végétation y est étrangement vivante.",
+        niveau: 3,
+        ennemi: creerElfe(nom: "Gardien Végétal"),
+        sallesConnectees: [4, 5, 8]
+    ))
+    
+    // Niveau 4 - Salle du boss
+    salles.append(Salle(
+        id: 8,
+        nom: "Chambre du Trône",
+        description: "Une immense salle ornée d'or et de pierres précieuses. La Fée Corrompue vous attend sur son trône.",
+        niveau: 4,
+        ennemi: {
+            let boss = creerFee(nom: "Fée Corrompue")
+            boss.pointsDeVie = 150 // Boss plus puissant
+            return boss
+        }(),
+        estBoss: true,
+        sallesConnectees: [6, 7]
+    ))
+    
+    return salles
 }
 
 // Gestion des combats
@@ -227,6 +369,74 @@ func combat(joueur: Personnage, ennemi: Personnage) -> Bool {
     return joueurActuel.estVivant
 }
 
+// Fonction principale pour explorer une salle
+func explorerSalle(joueur: Personnage, salles: [Salle], idSalle: Int) -> Int? {
+    let salle = salles.first(where: { $0.id == idSalle })!
+    
+    print("\n=== SALLE: \(salle.nom) (Niveau \(salle.niveau)) ===")
+    print(salle.description)
+    
+    // Gérer le combat si un ennemi est présent
+    if let ennemi = salle.ennemi {
+        print("\nUn ennemi approche: \(ennemi.nom) (\(ennemi.type))!")
+        
+        if combat(joueur: joueur, ennemi: ennemi) {
+            // Victoire
+            print("\nVous avez vaincu \(ennemi.nom)!")
+            
+            // Réinitialisation après le combat
+            joueur.reinitialiser()
+            
+            // Donner le trésor s'il y en a un
+            if let tresor = salle.tresor {
+                print("\nVous avez trouvé un trésor: \(tresor.description)")
+                tresor.effet(joueur)
+            }
+            
+            // Si c'était le boss final
+            if salle.estBoss {
+                return 0  // Code spécial pour indiquer la fin du jeu avec victoire
+            }
+            
+            // Supprimer l'ennemi pour ne pas refaire le combat
+            salle.ennemi = nil
+        } else {
+            // Défaite
+            return -1  // Code spécial pour indiquer la défaite
+        }
+    } else {
+        // S'il n'y a pas d'ennemi mais qu'il y a un trésor qui n'a pas été pris
+        if let tresor = salle.tresor {
+            print("\nVous avez trouvé un trésor: \(tresor.description)")
+            tresor.effet(joueur)
+            salle.tresor = nil  // Le trésor a été pris
+        }
+    }
+    
+    // Montrer les salles connectées
+    print("\nVous pouvez aller vers:")
+    for idSalleConnectee in salle.sallesConnectees {
+        if let salleConnectee = salles.first(where: { $0.id == idSalleConnectee }) {
+            print("[\(idSalleConnectee)] \(salleConnectee.nom) (Niveau \(salleConnectee.niveau))")
+        }
+    }
+    
+    // Choix de la prochaine salle
+    print("\nOù souhaitez-vous aller? (Entrez le numéro de la salle)")
+    
+    if let choix = readLine(), let idSalleChoisie = Int(choix) {
+        if salle.sallesConnectees.contains(idSalleChoisie) {
+            return idSalleChoisie
+        } else {
+            print("Choix invalide. Veuillez choisir une salle connectée.")
+            return idSalle  // Rester dans la même salle
+        }
+    } else {
+        print("Entrée invalide. Veuillez entrer un numéro de salle.")
+        return idSalle  // Rester dans la même salle
+    }
+}
+
 // Fonction principale du jeu
 func jouer() {
     print("==============================================")
@@ -277,49 +487,38 @@ func jouer() {
     print("- Une potion restaure 20 points de vie")
     print("- Chaque personnage a une technique spéciale utilisable 2 fois max par combat")
     print("- Les ennemis peuvent aussi utiliser des potions et leurs techniques spéciales!")
+    print("- Après chaque combat, vous récupérez vos potions et utilisations de technique spéciale")
+    print("- Le donjon est divisé en 4 niveaux, avec un boss final au niveau 4")
+    print("- Explorez les salles pour trouver des trésors et progresser vers le boss")
     
     print("\nVotre personnage: \(joueur!.description())")
     print("\nVotre aventure commence!")
-    print("Vous rencontrez un ennemi sur votre chemin!")
     
-    let ennemi1 = creerElfe(nom: "Elfe Sombre")
-    if combat(joueur: joueur!, ennemi: ennemi1) {
-        // Réinitialisation des potions et techniques spéciales entre les combats
-        joueur!.potions = 2
-        joueur!.utilisationsTechniqueSpeciale = 2
+    // Créer toutes les salles du donjon
+    let salles = creerSalles()
+    
+    // Commencer l'exploration à la salle 1
+    var idSalleActuelle = 1
+    
+    // Boucle principale du jeu
+    while true {
+        let resultat = explorerSalle(joueur: joueur!, salles: salles, idSalle: idSalleActuelle)
         
-        print("\nFélicitations! Vous avez vaincu l'Elfe Sombre!")
-        print("Vous avez récupéré 2 potions et 2 utilisations de technique spéciale pour le prochain combat!")
-        print("\nVous continuez votre aventure et rencontrez un autre ennemi...")
-        
-        let ennemi2 = creerOrdre(nom: "Chevalier Noir")
-        if combat(joueur: joueur!, ennemi: ennemi2) {
-            // Réinitialisation des potions et techniques spéciales entre les combats
-            joueur!.potions = 2
-            joueur!.utilisationsTechniqueSpeciale = 2
-            
-            print("\nBravo! Vous avez également vaincu le Chevalier Noir!")
-            print("Vous avez récupéré 2 potions et 2 utilisations de technique spéciale pour le combat final!")
-            print("\nVous avancez plus profondément dans le donjon...")
-            print("Vous vous retrouvez face au boss final!")
-            
-            let boss = creerFee(nom: "Fée Corrompue")
-            boss.pointsDeVie = 150 // Boss plus puissant
-            
-            if combat(joueur: joueur!, ennemi: boss) {
-                print("\n=== FÉLICITATIONS ===")
-                print("Vous avez terminé le jeu et sauvé le royaume!")
-            } else {
-                print("\nVous avez été vaincu par le boss final...")
-                print("Fin du jeu.")
-            }
-        } else {
-            print("\nVous avez été vaincu par le Chevalier Noir...")
+        if resultat == 0 {
+            // Victoire finale contre le boss
+            print("\n=== FÉLICITATIONS ===")
+            print("Vous avez vaincu la Fée Corrompue et terminé le jeu!")
+            print("Le royaume est sauvé grâce à votre bravoure!")
+            break
+        } else if resultat == -1 {
+            // Défaite
+            print("\nVous avez été vaincu...")
             print("Fin du jeu.")
+            break
+        } else if let nouvelleSalle = resultat {
+            // Continuer l'exploration à la nouvelle salle
+            idSalleActuelle = nouvelleSalle
         }
-    } else {
-        print("\nVous avez été vaincu par l'Elfe Sombre...")
-        print("Fin du jeu.")
     }
 }
 
